@@ -1,0 +1,5 @@
+{
+  "name": "QuantumPy 3.14 Simulator",
+  "description": "A web-based interface for the production-grade Python 3.14 Quantum Circuit Simulator, featuring circuit design, free-threaded simulation via Gemini, and result visualization.",
+  "requestFramePermissions": []
+}
