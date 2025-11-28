@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { CircuitState, SimulationResult } from '../types';
 import { getChatResponse } from '../services/geminiService';
@@ -17,12 +16,41 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ circuit, result }) => {
   const [messages, setMessages] = useState<Message[]>([
     { 
       role: 'model', 
-      text: "Hello! I'm your Quantum Tutor. I can help you design circuits, explain what specific gates do, or interpret your simulation results. Try asking: 'Why is the probability 50%?' or 'How do I create entanglement?'" 
+      text: "Hello! I'm your Quantum Tutor. I can help you design circuits, explain what specific gates do, or interpret your simulation results. Try running a 'Bell State' to see entanglement in action!" 
     }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  
+  // Track the last result ID/Time to prevent duplicate explanations
+  const lastExplainedResultRef = useRef<string | null>(null);
+
+  // Auto-explain results when they arrive
+  useEffect(() => {
+    const explainResults = async () => {
+      if (result && result.executionTime && result.executionTime !== lastExplainedResultRef.current) {
+        lastExplainedResultRef.current = result.executionTime;
+        setLoading(true);
+        
+        // We add a "System Prompt" effectively by sending a message on behalf of the user but hiding it? 
+        // No, cleaner is to just ask the AI to explain the new context.
+        // We will call the service with a specific prompt but NOT add it to the visible message history as a user message.
+        
+        try {
+          const prompt = "The user just ran a new simulation. Briefly explain the results shown in the 'probabilities' and 'stateVector' to a beginner. Explain WHY the quantum state ended up this way based on the gates used. Suggest one cool thing to try next.";
+          const response = await getChatResponse(prompt, messages, circuit, result);
+          setMessages(prev => [...prev, { role: 'model', text: response }]);
+        } catch (e) {
+          console.error("Auto-explanation failed", e);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    explainResults();
+  }, [result, circuit, messages]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -81,7 +109,10 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ circuit, result }) => {
                   Assistant
                 </div>
               )}
-              {msg.text}
+              {/* Render simple markdown-like bolding */}
+              <div dangerouslySetInnerHTML={{ 
+                  __html: msg.text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br/>') 
+              }} />
             </div>
           </div>
         ))}

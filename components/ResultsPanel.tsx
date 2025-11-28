@@ -40,6 +40,19 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({ result, loading, estimatedT
     );
   }
 
+  // Helper to determine phase visual
+  const getPhaseInfo = (real: number, imag: number) => {
+    const magnitude = Math.sqrt(real*real + imag*imag);
+    if (magnitude < 0.001) return { label: "Null", color: "text-slate-600", icon: "fa-circle" };
+
+    // Simple phase check
+    if (real > 0 && Math.abs(imag) < 0.1) return { label: "Constructive (+)", color: "text-green-400", icon: "fa-plus-circle" };
+    if (real < 0 && Math.abs(imag) < 0.1) return { label: "Destructive (-)", color: "text-red-400", icon: "fa-minus-circle" };
+    if (Math.abs(real) < 0.1 && Math.abs(imag) > 0) return { label: "Imaginary (i)", color: "text-purple-400", icon: "fa-bolt" };
+    
+    return { label: "Complex Phase", color: "text-blue-400", icon: "fa-wave-square" };
+  };
+
   return (
     <div className="space-y-6 h-full overflow-y-auto pr-2 custom-scrollbar relative">
       
@@ -102,29 +115,37 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({ result, loading, estimatedT
         </div>
       </div>
 
-      {/* State Vector Table */}
+      {/* State Vector Table with Interference Visualization */}
       <div className="bg-slate-800 p-4 rounded border border-slate-700">
          <div className="flex justify-between items-center mb-2">
-           <h4 className="text-xs text-slate-400 uppercase">State Vector Details</h4>
-           <span className="text-[10px] bg-slate-700 px-2 py-0.5 rounded text-slate-300">Mathematical Complex Amplitudes</span>
+           <h4 className="text-xs text-slate-400 uppercase">State Vector & Interference</h4>
+           <span className="text-[10px] bg-slate-700 px-2 py-0.5 rounded text-slate-300">Phase Analysis</span>
          </div>
          <div className="max-h-40 overflow-y-auto pr-2 custom-scrollbar">
            <table className="w-full text-left border-collapse">
              <thead className="text-xs text-slate-500 border-b border-slate-700 sticky top-0 bg-slate-800">
                <tr>
                  <th className="pb-2 pt-1 pl-2">Basis State</th>
-                 <th className="pb-2 pt-1">Real Part</th>
-                 <th className="pb-2 pt-1">Imaginary Part</th>
+                 <th className="pb-2 pt-1">Amplitude (Complex)</th>
+                 <th className="pb-2 pt-1">Wave Phase</th>
                </tr>
              </thead>
              <tbody className="font-mono text-xs">
-               {result.stateVector.map((sv, idx) => (
-                 <tr key={idx} className="border-b border-slate-700/50 last:border-0 hover:bg-slate-700/30">
-                   <td className="py-2 pl-2 text-purple-300 font-bold">{sv.label}</td>
-                   <td className="py-2 text-slate-300">{sv.real.toFixed(4)}</td>
-                   <td className="py-2 text-slate-400">{sv.imag >= 0 ? '+' : ''}{sv.imag.toFixed(4)}i</td>
-                 </tr>
-               ))}
+               {result.stateVector.map((sv, idx) => {
+                 const phase = getPhaseInfo(sv.real, sv.imag);
+                 return (
+                   <tr key={idx} className="border-b border-slate-700/50 last:border-0 hover:bg-slate-700/30">
+                     <td className="py-2 pl-2 text-purple-300 font-bold">{sv.label}</td>
+                     <td className="py-2 text-slate-300">
+                       {sv.real.toFixed(3)} {sv.imag >= 0 ? '+' : ''}{sv.imag.toFixed(3)}i
+                     </td>
+                     <td className={`py-2 ${phase.color} flex items-center gap-2`}>
+                        <i className={`fas ${phase.icon} text-[10px]`}></i>
+                        <span>{phase.label}</span>
+                     </td>
+                   </tr>
+                 );
+               })}
              </tbody>
            </table>
          </div>

@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
-import { CircuitState, GateType, SimulationResult } from './types';
-import { INITIAL_CIRCUIT } from './constants';
+import { CircuitState, GateType, SimulationResult, Preset } from './types';
+import { INITIAL_CIRCUIT, PRESETS } from './constants';
 import GateSelector from './components/GateSelector';
 import CircuitGrid from './components/CircuitGrid';
 import ResultsPanel from './components/ResultsPanel';
@@ -13,6 +12,7 @@ const App: React.FC = () => {
   const [selectedGate, setSelectedGate] = useState<GateType | null>(GateType.H);
   const [result, setResult] = useState<SimulationResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [activeStep, setActiveStep] = useState<number>(-1); // -1 = Idle
   const [estimatedTime, setEstimatedTime] = useState<string>("0.00s");
 
   // Recalculate estimate whenever circuit changes
@@ -51,13 +51,37 @@ const App: React.FC = () => {
     }));
   };
 
+  const handleLoadPreset = (preset: Preset) => {
+    setCircuit(preset.circuit);
+    setResult(null); // Clear previous results to avoid confusion
+  };
+
   const runSimulation = async () => {
     setLoading(true);
+    setResult(null);
+    setActiveStep(0);
+
     try {
-      const data = await simulateCircuitWithGemini(circuit);
+      // 1. Start API call in background
+      const simulationPromise = simulateCircuitWithGemini(circuit);
+      
+      // 2. Animate the "Processing" scanline
+      const totalSteps = circuit.steps;
+      const stepDuration = 300; // ms per step
+
+      for (let i = 0; i < totalSteps; i++) {
+        setActiveStep(i);
+        await new Promise(r => setTimeout(r, stepDuration));
+      }
+
+      // 3. Wait for actual result if not ready
+      const data = await simulationPromise;
+      
+      setActiveStep(-1); // Stop animation
       setResult(data);
     } catch (err) {
       console.error(err);
+      setActiveStep(-1);
     } finally {
       setLoading(false);
     }
@@ -65,8 +89,8 @@ const App: React.FC = () => {
 
   // Run initial simulation on mount
   useEffect(() => {
-    runSimulation();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Don't auto-run animation on mount, just fetch data if needed or stay idle
+    // runSimulation(); 
   }, []); 
 
   return (
@@ -108,7 +132,8 @@ const App: React.FC = () => {
             </div>
             <button 
                onClick={() => setCircuit({...circuit, gates: []})}
-               className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-white hover:bg-red-500/20 border border-transparent hover:border-red-500/50 rounded transition-all"
+               disabled={loading}
+               className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-white hover:bg-red-500/20 border border-transparent hover:border-red-500/50 rounded transition-all disabled:opacity-50"
              >
                <i className="fas fa-trash-alt mr-2"></i>Reset Circuit
             </button>
@@ -126,8 +151,11 @@ const App: React.FC = () => {
                   <CircuitGrid 
                       circuit={circuit}
                       selectedGateType={selectedGate}
+                      activeStep={activeStep}
                       onAddGate={addGate}
                       onRemoveGate={removeGate}
+                      presets={PRESETS}
+                      onLoadPreset={handleLoadPreset}
                   />
                 </div>
                 
@@ -143,12 +171,12 @@ const App: React.FC = () => {
                     className={`
                       px-8 py-4 rounded-lg font-bold text-white shadow-xl flex items-center gap-3 transition-all transform
                       ${loading 
-                        ? 'bg-slate-700 cursor-not-allowed opacity-50 grayscale' 
+                        ? 'bg-slate-800 cursor-not-allowed text-slate-400 border border-slate-700' 
                         : 'bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 shadow-cyan-900/40 hover:scale-[1.02] hover:shadow-cyan-900/60'}
                     `}
                   >
-                    {loading ? <i className="fas fa-circle-notch fa-spin"></i> : <i className="fas fa-play"></i>}
-                    <span>Run Simulation</span>
+                    {loading ? <i className="fas fa-cog fa-spin"></i> : <i className="fas fa-play"></i>}
+                    <span>{loading ? `Simulating Step ${activeStep + 1}...` : "Run Simulation"}</span>
                   </button>
                 </div>
              </div>

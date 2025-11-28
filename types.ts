@@ -32,3 +32,9 @@ export interface SimulationResult {
 export interface SimulationRequest {
   circuit: CircuitState;
 }
+
+export interface Preset {
+  name: string;
+  description: string;
+  circuit: CircuitState;
+}

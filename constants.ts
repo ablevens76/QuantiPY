@@ -1,4 +1,4 @@
-import { GateType } from './types';
+import { GateType, Preset } from './types';
 
 export const MAX_QUBITS = 5;
 export const MAX_STEPS = 8;
@@ -21,3 +21,52 @@ export const INITIAL_CIRCUIT = {
     { id: '3', type: GateType.CX, targetQubit: 2, controlQubit: 0, step: 2 },
   ]
 };
+
+export const PRESETS: Preset[] = [
+  {
+    name: "Bell State",
+    description: "The simplest example of Quantum Entanglement. Two qubits become inextricably linked.",
+    circuit: {
+      numQubits: 2,
+      steps: 4,
+      gates: [
+        { id: 'p1', type: GateType.H, targetQubit: 0, step: 0 },
+        { id: 'p2', type: GateType.CX, targetQubit: 1, controlQubit: 0, step: 1 },
+        { id: 'p3', type: GateType.M, targetQubit: 0, step: 2 },
+        { id: 'p4', type: GateType.M, targetQubit: 1, step: 2 },
+      ]
+    }
+  },
+  {
+    name: "GHZ State",
+    description: "Greenberger–Horne–Zeilinger state. Maximal entanglement across three qubits.",
+    circuit: {
+      numQubits: 3,
+      steps: 5,
+      gates: [
+        { id: 'g1', type: GateType.H, targetQubit: 0, step: 0 },
+        { id: 'g2', type: GateType.CX, targetQubit: 1, controlQubit: 0, step: 1 },
+        { id: 'g3', type: GateType.CX, targetQubit: 2, controlQubit: 1, step: 2 },
+        { id: 'g4', type: GateType.M, targetQubit: 0, step: 3 },
+        { id: 'g5', type: GateType.M, targetQubit: 1, step: 3 },
+        { id: 'g6', type: GateType.M, targetQubit: 2, step: 3 },
+      ]
+    }
+  },
+  {
+    name: "Superposition Swarm",
+    description: "Puts every qubit into superposition, creating a uniform probability distribution.",
+    circuit: {
+      numQubits: 4,
+      steps: 4,
+      gates: [
+        { id: 's1', type: GateType.H, targetQubit: 0, step: 0 },
+        { id: 's2', type: GateType.H, targetQubit: 1, step: 0 },
+        { id: 's3', type: GateType.H, targetQubit: 2, step: 0 },
+        { id: 's4', type: GateType.H, targetQubit: 3, step: 0 },
+        { id: 's5', type: GateType.Z, targetQubit: 0, step: 1 },
+        { id: 's6', type: GateType.Z, targetQubit: 2, step: 1 },
+      ]
+    }
+  }
+];
