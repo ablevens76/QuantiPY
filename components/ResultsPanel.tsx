@@ -41,14 +41,16 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({ result, loading, estimatedT
   }
 
   // Helper to determine phase visual
-  const getPhaseInfo = (real: number, imag: number) => {
-    const magnitude = Math.sqrt(real*real + imag*imag);
+  const getPhaseInfo = (real: number | undefined, imag: number | undefined) => {
+    const r = real ?? 0;
+    const i = imag ?? 0;
+    const magnitude = Math.sqrt(r*r + i*i);
     if (magnitude < 0.001) return { label: "Null", color: "text-slate-600", icon: "fa-circle" };
 
     // Simple phase check
-    if (real > 0 && Math.abs(imag) < 0.1) return { label: "Constructive (+)", color: "text-green-400", icon: "fa-plus-circle" };
-    if (real < 0 && Math.abs(imag) < 0.1) return { label: "Destructive (-)", color: "text-red-400", icon: "fa-minus-circle" };
-    if (Math.abs(real) < 0.1 && Math.abs(imag) > 0) return { label: "Imaginary (i)", color: "text-purple-400", icon: "fa-bolt" };
+    if (r > 0 && Math.abs(i) < 0.1) return { label: "Constructive (+)", color: "text-green-400", icon: "fa-plus-circle" };
+    if (r < 0 && Math.abs(i) < 0.1) return { label: "Destructive (-)", color: "text-red-400", icon: "fa-minus-circle" };
+    if (Math.abs(r) < 0.1 && Math.abs(i) > 0) return { label: "Imaginary (i)", color: "text-purple-400", icon: "fa-bolt" };
     
     return { label: "Complex Phase", color: "text-blue-400", icon: "fa-wave-square" };
   };
@@ -132,12 +134,14 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({ result, loading, estimatedT
              </thead>
              <tbody className="font-mono text-xs">
                {result.stateVector.map((sv, idx) => {
-                 const phase = getPhaseInfo(sv.real, sv.imag);
+                 const real = sv.real ?? 0;
+                 const imag = sv.imag ?? 0;
+                 const phase = getPhaseInfo(real, imag);
                  return (
                    <tr key={idx} className="border-b border-slate-700/50 last:border-0 hover:bg-slate-700/30">
                      <td className="py-2 pl-2 text-purple-300 font-bold">{sv.label}</td>
                      <td className="py-2 text-slate-300">
-                       {sv.real.toFixed(3)} {sv.imag >= 0 ? '+' : ''}{sv.imag.toFixed(3)}i
+                       {real.toFixed(3)} {imag >= 0 ? '+' : ''}{imag.toFixed(3)}i
                      </td>
                      <td className={`py-2 ${phase.color} flex items-center gap-2`}>
                         <i className={`fas ${phase.icon} text-[10px]`}></i>
